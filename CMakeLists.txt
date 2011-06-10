@@ -105,6 +105,9 @@ if(WIN32)
   include_directories("${CMAKE_CURRENT_SOURCE_DIR}/platform/windows/libusb10emu")
 endif()
 
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 # Add library project
 add_subdirectory (src)
 

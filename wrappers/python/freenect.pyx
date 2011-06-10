@@ -135,19 +135,19 @@ cdef class StatePtr:
         return "<State Pointer>"
     
     def _get_accelx(self):
-        return int(cython.operator.dereference(self._ptr).accelerometer_x)
+        return int(self._ptr.accelerometer_x)
 
     def _get_accely(self):
-        return int(cython.operator.dereference(self._ptr).accelerometer_y)
+        return int(self._ptr.accelerometer_y)
 
     def _get_accelz(self):
-        return int(cython.operator.dereference(self._ptr).accelerometer_z)
+        return int(self._ptr.accelerometer_z)
 
     def _get_tilt_angle(self):
-        return int(cython.operator.dereference(self._ptr).tilt_angle)
+        return int(self._ptr.tilt_angle)
 
     def _get_tilt_status(self):
-        return int(cython.operator.dereference(self._ptr).tilt_status)
+        return int(self._ptr.tilt_status)
     
     accelerometer_x = property(_get_accelx)
     accelerometer_y = property(_get_accely)
@@ -226,7 +226,7 @@ def get_tilt_degs(StatePtr state):
 def error_open_device():
     print("Error: Can't open device. 1.) is it plugged in? 2.) Read the README")
 
-cdef init():
+def init():
     cdef void* ctx
     if freenect_init(cython.address(ctx), 0) < 0:
         return
@@ -235,7 +235,7 @@ cdef init():
     ctx_out._ptr = ctx
     return ctx_out
 
-cdef open_device(CtxPtr ctx, int index):
+def open_device(CtxPtr ctx, int index):
     cdef void* dev
     if freenect_open_device(ctx._ptr, cython.address(dev), index) < 0:
         return
