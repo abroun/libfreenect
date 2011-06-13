@@ -47,26 +47,6 @@ RESOLUTION_LOW = 0
 RESOLUTION_MEDIUM = 1
 RESOLUTION_HIGH = 2
 
-
-cdef struct freenect_raw_tilt_state:
-    short accelerometer_x
-    short accelerometer_y
-    short accelerometer_z
-    char tilt_angle
-    int tilt_status
-
-ctypedef struct freenect_frame_mode:
-    int reserved
-    int resolution
-    int pixel_format
-    int nbytes
-    short width
-    short height
-    char data_bits_per_pixel
-    char padding_bits_per_pixel
-    char framerate
-    char is_valid
-
 cdef extern from "numpy/arrayobject.h":
     void import_array()
     cdef object PyArray_SimpleNewFromData(int nd, npc.npy_intp *dims,
@@ -85,6 +65,30 @@ cdef extern from "libfreenect_sync.h":
     
 
 cdef extern from "libfreenect.h":
+    
+    ctypedef struct freenect_raw_tilt_state:
+        short accelerometer_x
+        short accelerometer_y
+        short accelerometer_z
+        char tilt_angle
+        int tilt_status
+    
+    ctypedef struct freenect_frame_mode:
+        int reserved
+        int resolution
+        
+        int dummy
+        int video_format
+        int depth_format
+        
+        int bytes
+        short width
+        short height
+        char data_bits_per_pixel
+        char padding_bits_per_pixel
+        char framerate
+        char is_valid
+    
     ctypedef void (*freenect_depth_cb)(void *dev, char *depth, int timestamp) # was u_int32
     ctypedef void (*freenect_video_cb)(void *dev, char *video, int timestamp) # was u_int32
     int freenect_init(void **ctx, int usb_ctx) # changed from void * as usb_ctx is always NULL
@@ -245,6 +249,46 @@ def open_device(CtxPtr ctx, int index):
     return dev_out
 
 _depth_cb, _video_cb = None, None
+
+def set_video_callback(DevPtr dev, callback):
+    
+    global _video_cb
+    _video_cb = callback
+    
+    freenect_set_video_callback(dev._ptr, flexible_video_cb)
+    
+def set_depth_callback(DevPtr dev, callback):
+    
+    global _depth_cb
+    _depth_cb = callback
+    
+    freenect_set_depth_callback(dev._ptr, flexible_depth_cb)
+
+cdef void flexible_video_cb(void *dev, char *data, int timestamp):
+    
+    # Get the current video mode so that we can work out the resolution
+    cdef freenect_frame_mode frameMode
+    frameMode = freenect_get_current_video_mode(dev)
+    
+    cdef DevPtr dev_out
+    dev_out = DevPtr()
+    dev_out._ptr = dev
+    if _video_cb:
+        _video_cb( dev_out, PyString_FromStringAndSize(data, frameMode.bytes), 
+            frameMode.resolution, frameMode.video_format, timestamp )
+
+cdef void flexible_depth_cb(void *dev, char *data, int timestamp):
+    
+    # Get the current video mode so that we can work out the resolution
+    cdef freenect_frame_mode frameMode 
+    frameMode = freenect_get_current_depth_mode(dev)
+    
+    cdef DevPtr dev_out
+    dev_out = DevPtr()
+    dev_out._ptr = dev
+    if _depth_cb:
+        _depth_cb( dev_out, PyString_FromStringAndSize(data, frameMode.bytes), 
+            frameMode.resolution, frameMode.depth_format, timestamp )
 
 cdef void depth_cb(void *dev, char *data, int timestamp):
     nbytes = 614400  # 480 * 640 * 2
