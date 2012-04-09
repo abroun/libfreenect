@@ -403,7 +403,7 @@ def sync_get_video(index=0, format=VIDEO_RGB):
         dims[0], dims[1], dims[2]  = 480, 640, 3
         return PyArray_SimpleNewFromData(3, dims, npc.NPY_UINT8, data), timestamp
     elif format == VIDEO_IR_8BIT:
-        dims[0], dims[1]  = 480, 640
+        dims[0], dims[1]  = 1024, 1280  #1280x1024
         return PyArray_SimpleNewFromData(2, dims, npc.NPY_UINT8, data), timestamp
     else:
         raise TypeError('Conversion not implemented for type [%d]' % (format))
